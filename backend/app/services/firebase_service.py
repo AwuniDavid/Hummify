@@ -18,18 +18,22 @@ class FirebaseService:
             google_creds_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
             
             if google_creds_json:
-                # Parse the JSON string from environment variable
-                cred_dict = json.loads(google_creds_json)
-                cred = credentials.Certificate(cred_dict)
-                print("✅ Using Firebase credentials from environment variable")
+                try:
+                    # Parse the JSON string from environment variable
+                    cred_dict = json.loads(google_creds_json)
+                    cred = credentials.Certificate(cred_dict)
+                    print("✅ Using Firebase credentials from environment variable")
+                except json.JSONDecodeError as e:
+                    print(f"❌ Error parsing Firebase credentials JSON: {e}")
+                    raise Exception("Invalid Firebase credentials JSON format")
             elif os.path.exists(settings.firebase_credentials_path):
                 # Fallback to local file (for development)
                 cred = credentials.Certificate(settings.firebase_credentials_path)
                 print("✅ Using Firebase credentials from local file")
             else:
-                # Last resort: try default credentials
-                cred = credentials.ApplicationDefault()
-                print("⚠️ Using default Firebase credentials")
+                # No credentials available - this will fail
+                print("❌ No Firebase credentials found!")
+                raise Exception("Firebase credentials not found. Please set GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable.")
             
             firebase_admin.initialize_app(cred, {
                 'projectId': settings.firebase_project_id,
